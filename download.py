@@ -16,7 +16,7 @@ def is_already_downloaded(video_id):
 common_args = [
     "yt-dlp",
     "-x",
-    "--cookies-from-browser", "chrome+gnomekeyring:Profile 1",
+    "--cookies-from-browser", "chrome",
     "--audio-format", "best",
     "--no-keep-video",
     "--embed-thumbnail",

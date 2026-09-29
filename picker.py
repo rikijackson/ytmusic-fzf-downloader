@@ -17,6 +17,7 @@ def single_select(items):
         input="\n".join(lines), 
         capture_output=True, 
         text=True,
+        encoding="utf-8",
         check=False
     )
     if single_fzf.returncode != 0 or not single_fzf.stdout.strip():
@@ -42,6 +43,7 @@ def multi_select_songs(items, header="TAB: select/unselect song | CTRL-A: select
         input="\n".join(lines),
         capture_output=True,
         text=True,
+        encoding="utf-8",
         check=False
     )
     if multi_fzf.returncode != 0 or not multi_fzf.stdout.strip():
@@ -70,6 +72,7 @@ def multi_select_different_media(items):
         input="\n".join(lines),
         capture_output=True,
         text=True,
+        encoding="utf-8",
         check=False
     )
     if multi_fzf.returncode != 0 or not multi_fzf.stdout.strip():
