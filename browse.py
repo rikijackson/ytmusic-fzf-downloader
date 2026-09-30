@@ -1,6 +1,7 @@
 import sys
 from textwrap import dedent
 
+from metadata import _album_text, _artists_text, _metadata, _thumbnail_url
 from ytmusic_client import yt
 
 
@@ -20,7 +21,17 @@ def get_all_songs(artist):
             "type": "song", 
             "title": s["title"], 
             "sub": album,
-            "id": s["videoId"]
+            "id": s["videoId"],
+            "thumbnail": _thumbnail_url(s),
+            "metadata": {
+                key: value for key, value in {
+                    "title": s.get("title"),
+                    "artists": _artists_text(s.get("artists") or s.get("author") or s.get("artist")),
+                    "album": album or None,
+                    "release year": s.get("year"),
+                    "duration": s.get("duration") or s.get("length"),
+                }.items() if value is not None and value != ""
+            },
         })
     return items
 
@@ -54,12 +65,18 @@ def get_all_albums(artist):
         all_albums = albums_section.get("results", [])
     items = []
     for a in all_albums:
-        items.append({
-            "type": "album", 
-            "title": a["title"], 
-            "sub": a.get("year", ""), 
-            "id": a["browseId"]
-        })
+        items.append(
+            _metadata({
+                "type": "album", 
+                "title": a["title"], 
+                "sub": a.get("year", ""), 
+                "id": a["browseId"]
+            },
+            artists=a.get("artists"),
+            year=a.get("year"),
+            duration=a.get("duration"),
+            thumbnail=_thumbnail_url(a)
+        ))
     return items
 
 def get_all_singles(artist):
@@ -89,18 +106,39 @@ def get_all_singles(artist):
         all_singles = singles_section.get("results", [])
     items = []
     for si in all_singles:
-        items.append({
-            "type": "single", 
-            "title": si["title"], 
-            "sub": si.get("year", "single"), 
-            "id": si["browseId"]
-        })
+        items.append(
+            _metadata({
+                "type": "single", 
+                "title": si["title"], 
+                "sub": si.get("year", "single"), 
+                "id": si["browseId"]
+            }, 
+            artists=si.get("artists"),
+            year=si.get("year"), 
+            duration=si.get("duration"), 
+            thumbnail=_thumbnail_url(si)
+        ))
     return items
 
 def get_tracks_from_album(album_id):
     album = yt.get_album(album_id)
     tracks = album["tracks"]
     playlist_title = album["title"] 
+    artwork = _thumbnail_url(album)
+    album_artists = album.get("artists")
+    for track in tracks:
+        track_artists = track.get("artists") or album_artists
+        metadata = {
+            key: value for key, value in {
+                "title": track.get("title"),
+                "artists": _artists_text(track_artists),
+                "album": playlist_title,
+                "release year": album.get("year"),
+                "duration": track.get("duration") or track.get("length"),
+            }.items() if value is not None and value != ""
+        }
+        track["metadata"] = metadata
+        track["thumbnail"] = _thumbnail_url(track) or artwork
     return tracks, playlist_title 
 
 def get_items(category, query):
@@ -112,12 +150,18 @@ def get_items(category, query):
                 print(f"Did not find any albums for this query: {query}")
                 sys.exit(1)
             for album in albums:
-                items.append({
-                    "type": "album", 
-                    "title": album["title"], 
-                    "sub": album.get("year", ""), 
-                    "id": album["browseId"]
-                })
+                items.append(
+                    _metadata({
+                        "type": "album", 
+                        "title": album["title"], 
+                        "sub": album.get("year", ""), 
+                        "id": album["browseId"]
+                    }, 
+                    artists=album.get("artists"), 
+                    year=album.get("year"),
+                    duration=album.get("duration"),
+                    thumbnail=_thumbnail_url(album)
+                ))
         case "artist":
             search_results = yt.search(query, filter="artists", limit=1)
             if search_results:
@@ -170,12 +214,21 @@ def get_items(category, query):
                 sys.exit(1)
             for s in songs:
                 song = yt.get_song(s["videoId"])["videoDetails"]
-                items.append({
-                    "type" : "song",
-                    "title" : song["title"],
-                    "sub" : song["author"],
-                    "id" : song["videoId"]
-                })
+                album_name = _album_text(song.get("album"))
+                artists = song.get("artists") or song.get("author") or s.get("artists")
+                items.append(
+                    _metadata({
+                        "type" : "song",
+                        "title" : song["title"],
+                        "sub" : song["author"],
+                        "id" : song["videoId"]
+                    }, 
+                    artists=artists, 
+                    album=album_name or _album_text(s.get("album")),
+                    year=song.get("year") or s.get("year"),
+                    duration=song.get("length") or song.get("lengthSeconds") or s.get("duration"),
+                    thumbnail=_thumbnail_url(song) or _thumbnail_url(s)
+                ))
         case _:
             print("will never reach this")
     return items
