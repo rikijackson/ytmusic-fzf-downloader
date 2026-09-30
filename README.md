@@ -15,6 +15,8 @@ albums, singles, songs, or any combination, with an optional sort order
 - Search by `artist`, `album`, or `song`
 - Full artist discography, not capped at the API's default preview size
 - Fuzzy-select the result you want via `fzf`
+- Preview available result metadata and album/song artwork in `fzf` (artwork
+  rendering uses optional [`chafa`](https://github.com/hpjansson/chafa))
 - For albums and singles, interactively select **one, multiple, or all tracks**
   before downloading
 - Album/single track selection uses `fzf --multi` with:
@@ -64,6 +66,10 @@ yt-dlp --version
 fzf --version
 deno --version
 ```
+
+Install `chafa` to render thumbnails in the preview pane. Without it, the
+metadata preview remains available. Thumbnails are cached under
+`~/.cache/ytmusic-fzf-downloader/thumbnails`.
 
 ## Installation
 
