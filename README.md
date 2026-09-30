@@ -6,17 +6,19 @@ and downloads it as audio with [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) —
 metadata and thumbnail embedded, saved straight into your `~/Music` folder.
 
 For artists, it fetches their **entire** catalog (not just the ~25-item
-preview YouTube Music's API returns by default) and lets you filter by
-albums, singles, songs, or any combination, with an optional sort order
-(recency / popularity / alphabetical).
+preview YouTube Music's API returns by default) and lets you browse albums,
+singles, songs, or any combination, with an optional sort order (recency /
+popularity / alphabetical) for albums and singles.
 
 ## Features
 
 - Search by `artist`, `album`, or `song`
 - Full artist discography, not capped at the API's default preview size
 - Fuzzy-select the result you want via `fzf`
-- Preview available result metadata and album/song artwork in `fzf` (artwork
-  rendering uses optional [`chafa`](https://github.com/hpjansson/chafa))
+- Preview available title, artist, album, release year, and duration metadata
+  as you move through results; fields without data are omitted
+- Preview available thumbnails in `fzf` using optional
+  [`chafa`](https://github.com/hpjansson/chafa)
 - For albums and singles, interactively select **one, multiple, or all tracks**
   before downloading
 - Album/single track selection uses `fzf --multi` with:
@@ -35,7 +37,10 @@ albums, singles, songs, or any combination, with an optional sort order
 - `config.py` — `music_dir`, valid categories, shared constants
 - `ytmusic_client.py` — the shared `YTMusic()` instance
 - `browse.py` — all search/API logic: resolving a query into items, fetching an artist's full albums/singles/songs
+- `metadata.py` — metadata formatting and thumbnail selection helpers
 - `picker.py` — the `fzf` wrappers (single-select and multi-select)
+- `preview.py` — renders fzf preview metadata and cached thumbnail artwork
+- `handoff.py` — routes selected items to the appropriate track picker and downloader
 - `download.py` — `sanitize()`, duplicate-detection, and the `yt-dlp` download calls
 
 ## Requirements
@@ -44,6 +49,7 @@ albums, singles, songs, or any combination, with an optional sort order
 - [`ytmusicapi`](https://pypi.org/project/ytmusicapi/)
 - [`yt-dlp`](https://github.com/yt-dlp/yt-dlp)
 - [`fzf`](https://github.com/junegunn/fzf) available on your `PATH`
+- [`chafa`](https://github.com/hpjansson/chafa) (optional) to render thumbnails in the fzf preview pane; metadata previews work without it
 - [`secretstorage`](https://github.com/mitya57/secretstorage) - used by yt-dlp
   to access Chrome's encryption key through the Linux keyring
 - [`mutagen`](https://github.com/quodlibet/mutagen) - used by yt-dlp for metadata
@@ -67,9 +73,10 @@ fzf --version
 deno --version
 ```
 
-Install `chafa` to render thumbnails in the preview pane. Without it, the
-metadata preview remains available. Thumbnails are cached under
-`~/.cache/ytmusic-fzf-downloader/thumbnails`.
+When a result has a thumbnail, the preview downloads it on demand and caches it
+under `~/.cache/ytmusic-fzf-downloader/thumbnails`. In Kitty, thumbnails use
+Kitty's image protocol; other terminals use Chafa's character-art rendering.
+Without Chafa, the metadata preview remains available.
 
 ## Installation
 
@@ -91,8 +98,9 @@ ln -s "$(pwd)/ytmpnd.py" /usr/local/bin/ytmpnd
 ytmpnd <category> <query>
 ```
 
-`<category>` is one of `album`, `artist`, or `song`. If you omit the
-arguments, the script will prompt you interactively.
+`<category>` is one of `album`, `artist`, or `song`. Singles are browsed through
+artist mode. If you omit the arguments, the script prompts for a category and
+then a query.
 
 ```bash
 ytmpnd artist Radiohead
@@ -113,13 +121,16 @@ Type 1, 2, 3 to choose.
 You can select multiple options by separating them with commas like this: 1, 3
 ```
 
-For albums/singles, you can additionally choose a sort order (recency,
-popularity, alphabetical, or no preference). All matching results are then
-merged into one list.
+For albums and singles, you can additionally choose a sort order (recency,
+popularity, alphabetical, or no preference). Choose one or more catalog types;
+the matching results are merged into one fzf list.
 
 ### Picking and downloading
 
-Every mode funnels its results into `fzf`:
+Every mode uses `fzf`. The highlighted result's available metadata appears in
+the preview pane, and the preview updates as you move through the list. A
+thumbnail appears below the metadata when artwork is available and Chafa is
+installed. The searchable list itself stays compact:
 
 ```
 0    [SONG] Everything In Its Right Place (Kid A)
@@ -128,14 +139,18 @@ Every mode funnels its results into `fzf`:
 ...
 ```
 
-Pick one and press Enter.
+Selection depends on the mode:
 
-- **Song** → downloads the selected song directly into `~/Music/`
-- **Album/Single** → opens a second `fzf` screen containing the tracks
+- **Song search** → multi-select one or more song results, then press Enter to
+  download them into `~/Music/`
+- **Album search** → select an album, then choose tracks from its tracklist
+- **Artist mode** → multi-select songs, albums, and singles together; each
+  selected album or single then opens its own track picker
 
 ### Selecting album tracks
 
-When an album or single is selected, the script now shows its complete tracklist and allows multiple tracks to be selected:
+When an album or single is selected, fzf shows its tracklist and previews the
+track's available metadata and album artwork. You can select multiple tracks:
 
 ```
 0 Song-1-Title 
@@ -144,7 +159,7 @@ When an album or single is selected, the script now shows its complete tracklist
 ...
 ```
 
-Use:
+Use the following controls in the track picker:
 - `TAB` - select/unselect the highlighted track
 - `CTRL+A` - select all tracks
 - `ENTER` - confirm and start downloading the selected tracks
@@ -161,7 +176,8 @@ For example, if you select tracks 2,5 and 8, the files retain their original alb
 ...
 ```
 
-The numbering is taken from the track's original `trackNumber`, rather than from the order in which you selected the tracks.
+The numbering comes from each track's original `trackNumber`, rather than from
+the order in which you selected tracks.
 
 
 ## Notes / Caveats
