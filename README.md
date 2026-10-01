@@ -10,6 +10,8 @@ preview YouTube Music's API returns by default) and lets you browse albums,
 singles, songs, or any combination, with an optional sort order (recency /
 popularity / alphabetical) for albums and singles.
 
+![Demo](assets/demo.gif)
+
 ## Features
 
 - Search by `artist`, `album`, or `song`
