@@ -13,14 +13,14 @@ def get_album_tracks_and_dir(album):
     album_dir.mkdir(parents=True, exist_ok=True)
     return selected_tracks, album_dir
 
-def decide_and_download(category, items, force):
+def decide_and_download(category, items, force, link_features):
     if category == "song":
         songs = picker.multi_select_songs(items)
         download_selected_songs(songs, force)
     elif category == "album":
         album = picker.single_select(items)
         selected_tracks, album_dir = get_album_tracks_and_dir(album)
-        download_selected_songs_in_album(selected_tracks, album_dir, force)
+        download_selected_songs_in_album(selected_tracks, album_dir, force, link_features)
     elif category == "artist":
         selected_media = picker.multi_select_different_media(items)
         songs, albums_and_singles = [], []
@@ -34,7 +34,7 @@ def decide_and_download(category, items, force):
             selected_tracks, album_dir = get_album_tracks_and_dir(album)
             map_album_dir_to_selected_songs[album_dir] = selected_tracks
         for album_dir, selected_tracks in map_album_dir_to_selected_songs.items():
-            download_selected_songs_in_album(selected_tracks, album_dir, force)
+            download_selected_songs_in_album(selected_tracks, album_dir, force, link_features)
         download_selected_songs(songs, force)
 
 
