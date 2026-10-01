@@ -61,8 +61,15 @@ popularity / alphabetical) for albums and singles.
 Install the Python dependencies:
 
 ```bash
-pip install ytmusicapi yt-dlp secretstorage mutagen
+python -m pip install -r requirements.txt
 ```
+
+The downloader currently asks `yt-dlp` to read cookies from the default Chrome
+profile (`--cookies-from-browser chrome`). Make sure that profile is signed in
+to YouTube Music. Other browsers or non-default Chrome profiles are not
+configurable yet. On Linux, Chrome cookie decryption may also require the
+keyring used by your desktop session; `secretstorage` is included for GNOME
+Keyring support.
 
 Deno should also be installed and available on your PATH. Verify the
 required tools with:
@@ -107,6 +114,16 @@ ytmpnd artist Radiohead
 ytmpnd album "In Rainbows"
 ytmpnd song "Everything In Its Right Place"
 ```
+
+Add `--force` to bypass this tool's duplicate check for video IDs already
+found under `~/Music`:
+
+```bash
+ytmpnd --force song "Everything In Its Right Place"
+```
+
+This only bypasses the tool's check; `yt-dlp` may still skip a file that
+already exists at the output path.
 
 ### Artist mode
 
@@ -167,12 +184,13 @@ Use the following controls in the track picker:
 
 Only the selected tracks are downloaded.
 
-For example, if you select tracks 2,5 and 8, the files retain their original album numbering:
+For example, if you select tracks 2, 5, and 8, the files retain their original
+album numbering:
 
 ```
 02 Song-2-Title 
 05 Song-5-Title
-06 Song-6-Title
+08 Song-8-Title
 ...
 ```
 
@@ -182,7 +200,7 @@ the order in which you selected tracks.
 
 ## Notes / Caveats
 
-- The script uses Chrome cookies for YouTube authentication. The browser profile is configured in the `--cookies-from-browser` argument and should match the Chrome profile you use.
+- The script uses cookies from the default Chrome profile for YouTube authentication. The browser and profile are currently hardcoded in `download.py`; other browsers and profiles are not configurable.
 - On Linux systems using GNOME Keyring, `yt-dlp` can use the browser's keyring backend for Chrome cookie decryption. `secretstorage` must be installed for yt-dlp to access the keyring and decrypt Chrome cookies.
 - `mutagen` is required for yt-dlp to embed downloaded metadata and thumbnail artwork into the resulting audio files.
 - `Deno` is used by `yt-dlp` as a JavaScript runtime for parts of YouTube's extraction process and should be available on your PATH.
@@ -191,3 +209,8 @@ the order in which you selected tracks.
 ## License
 
 MIT License - Copyright (c) 2026 Nipun Kothari  
+
+## Contributing
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup
+instructions and open issues to work on.
