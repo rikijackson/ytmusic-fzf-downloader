@@ -20,9 +20,7 @@ Run the program from the checkout with:
 python ytmpnd.py artist Radiohead
 ```
 
-Run the organization regression checks with `python -m unittest discover -s tests -v`.
-These checks use temporary files and mocked downloads/API responses; they do not
-access the network or download media.
+The project does not yet have an automated test suite.
 Before submitting a change, run the affected flow manually when possible and describe what you checked in the pull request. 
 Avoid downloading copyrighted material as part of validation; selection and preview flows can be checked before confirming a download.
 
